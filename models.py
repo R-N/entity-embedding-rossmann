@@ -8,13 +8,14 @@ import xgboost as xgb
 from sklearn import neighbors
 from sklearn.preprocessing import Normalizer
 
-from keras.models import Sequential
-from keras.models import Model as KerasModel
-from keras.layers import Input, Dense, Activation, Reshape
-from keras.layers import Concatenate
-from keras.layers.embeddings import Embedding
-from keras.callbacks import ModelCheckpoint
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Model as KerasModel
+from tensorflow.keras.layers import Input, Dense, Activation, Reshape
+from tensorflow.keras.layers import Concatenate
+from tensorflow.keras.layers import Embedding
+from tensorflow.keras.callbacks import ModelCheckpoint
 
+#%%
 import pickle
 
 
