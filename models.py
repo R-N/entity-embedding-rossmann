@@ -199,8 +199,8 @@ class NN_with_EntityEmbedding(Model):
     def __build_keras_model(self):
         input_model = [Input(shape=(1,)) for i in range(self.feature_count)]
         self.embeddings = [
-            Embedding(input_dim, hidden_dim, name=f"{f}_embedding")(input)
-            if input_dim else Dense(hidden_dim)(input)
+            Embedding(input_dim, hidden_dim, name=f"{f}_embedding")
+            if input_dim else Dense(hidden_dim)
             for input, (f, input_dim, hidden_dim) in zip(input_model, self.features)
         ]
         self.embedding_dict = {
@@ -208,9 +208,9 @@ class NN_with_EntityEmbedding(Model):
             for (f, i, h), embedding in zip(self.features, self.embeddings)
         }
         output_embeddings = [
-            Reshape(target_shape=(hidden_dim,))(embedding) 
-            if isinstance(embedding, Embedding) else embedding
-            for embedding, (f, input_dim, hidden_dim) in zip(self.embeddings, self.features)
+            Reshape(target_shape=(hidden_dim,))(embedding(input)) 
+            if isinstance(embedding, Embedding) else embedding(input)
+            for input, embedding, (f, input_dim, hidden_dim) in zip(input_model, self.embeddings, self.features)
         ]
 
         output_model = Concatenate()(output_embeddings)

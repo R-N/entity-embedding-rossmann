@@ -18,7 +18,6 @@ shuffle_data = False
 one_hot_as_input = False
 embeddings_as_input = False
 save_embeddings = True
-saved_embeddings_fname = "embeddings.pickle"  # set save_embeddings to True to create this file
 
 features=[
     ("store", 54, 10),
@@ -105,12 +104,12 @@ train_data_y = np.array(train_data_y)
 with open('les.pickle', 'wb') as f:
     pickle.dump(les, f, -1)
 
-les_dict = {
+le_dict = {
     f: le
     for le, (f, i, h) in zip(les, features)
 }
-with open('les_dict.pickle', 'wb') as f:
-    pickle.dump(les_dict, f, -1)
+with open('le_dict.pickle', 'wb') as f:
+    pickle.dump(le_dict, f, -1)
 
 num_records = len(X)
 train_size = int(train_ratio * num_records)
@@ -124,7 +123,7 @@ if shuffle_data:
 
 if embeddings_as_input:
     print("Using learned embeddings as input")
-    X = embed_features(X, saved_embeddings_fname)
+    X = embed_features(X, "embeddings.pickle")
 
 if one_hot_as_input:
     print("Using one-hot encoding as input")
@@ -171,7 +170,7 @@ if save_embeddings:
     with open("embeddings.pickle", 'wb') as f:
         pickle.dump(embeddings, f, -1)
     embeddings_dict = {f: e.get_weights()[0] for f, e in model.embedding_dict.items()}
-    with open("embeddings_dict.pickle", 'wb') as f:
+    with open("embedding_dict.pickle", 'wb') as f:
         pickle.dump(embeddings_dict, f, -1)
 
 
