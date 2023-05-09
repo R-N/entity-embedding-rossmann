@@ -23,15 +23,14 @@ def feature_list(record):
     promo = record['onpromotion']
 
     return [
+        1,
         store_index,
         day_of_week,
         promo,
         year,
         month,
         day,
-        store['city'],
         store['state'],
-        store['type'],
     ]
 
 
