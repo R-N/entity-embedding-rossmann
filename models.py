@@ -196,7 +196,7 @@ class NN_with_EntityEmbedding(Model):
 
     def __build_keras_model(self):
         input_store = Input(shape=(1,))
-        output_store = Embedding(1115, 10, name='store_embedding')(input_store)
+        output_store = Embedding(54, 10, name='store_embedding')(input_store)
         output_store = Reshape(target_shape=(10,))(output_store)
 
         input_dow = Input(shape=(1,))
