@@ -11,40 +11,40 @@ with open('train_data.pickle', 'rb') as f:
 with open('store_data.pickle', 'rb') as f:
     store_data = pickle.load(f)
 
-
 def feature_list(record):
-    dt = datetime.strptime(record['Date'], '%Y-%m-%d')
-    store_index = int(record['Store'])
+    dt = datetime.strptime(record['date'], '%Y-%m-%d')
+    store_index = int(record['store_nbr'])
     year = dt.year
     month = dt.month
     day = dt.day
-    day_of_week = int(record['DayOfWeek'])
-    try:
-        store_open = int(record['Open'])
-    except:
-        store_open = 1
+    day_of_week = int(dt.weekday())
+    store = store_data[store_index-1]
+    family = record['family']
+    promo = record['onpromotion']
 
-    promo = int(record['Promo'])
-
-    return [store_open,
-            store_index,
-            day_of_week,
-            promo,
-            year,
-            month,
-            day,
-            store_data[store_index - 1]['State']
-            ]
+    return [
+        store_index,
+        day_of_week,
+        promo,
+        year,
+        month,
+        day,
+        store['city'],
+        store['state'],
+        store['type'],
+    ]
 
 
 train_data_X = []
 train_data_y = []
 
 for record in train_data:
-    if record['Sales'] != '0' and record['Open'] != '':
-        fl = feature_list(record)
-        train_data_X.append(fl)
-        train_data_y.append(int(record['Sales']))
+    if record['sales']:
+        sales = float(record['sales'])
+        if sales:
+            fl = feature_list(record)
+            train_data_X.append(fl)
+            train_data_y.append(sales)
 print("Number of train datapoints: ", len(train_data_y))
 
 print(min(train_data_y), max(train_data_y))
