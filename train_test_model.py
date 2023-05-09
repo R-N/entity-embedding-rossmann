@@ -57,7 +57,13 @@ models = []
 
 print("Fitting NN_with_EntityEmbedding...")
 for i in range(5):
-    models.append(NN_with_EntityEmbedding(X_train, y_train, X_val, y_val))
+    model = NN_with_EntityEmbedding()
+    model.fit(
+        X_train, y_train, 
+        X_val, y_val,
+        epochs=10
+    )
+    models.append(model)
 
 # print("Fitting NN...")
 # for i in range(5):

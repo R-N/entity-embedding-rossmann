@@ -158,13 +158,10 @@ class NN_with_EntityEmbedding(Model):
 
     def __init__(
         self, 
-        X_train, y_train, 
-        X_val, y_val,
-        epochs=10,
         features=[
             ("store", 54, 10),
             ("dow", 7, 6),
-            ("promo", 1, 1),
+            ("promo", 0, 1),
             ("year", 3, 2),
             ("month", 12, 6),
             ("day", 31, 10),
@@ -178,7 +175,6 @@ class NN_with_EntityEmbedding(Model):
         model_activation="relu"
     ):
         super().__init__()
-        self.epochs = epochs
         
         self.features = features
         self.feature_count = len(self.features)
@@ -187,9 +183,7 @@ class NN_with_EntityEmbedding(Model):
         self.model_activation = model_activation
 
         self.checkpointer = ModelCheckpoint(filepath="best_model_weights.hdf5", verbose=1, save_best_only=True)
-        self.max_log_y = max(numpy.max(numpy.log(y_train)), numpy.max(numpy.log(y_val)))
         self.__build_keras_model()
-        self.fit(X_train, y_train, X_val, y_val)
 
     def split_features(self, X):
         X_list = [
@@ -205,10 +199,10 @@ class NN_with_EntityEmbedding(Model):
     def __build_keras_model(self):
         input_model = [Input(shape=(1,)) for i in range(self.feature_count)]
         output_embeddings = [
-            Reshape(target_shape=(embed_dim,))(
-                Embedding(input_dim, embed_dim, name=f)(input)
-            )
-            for input, (f, input_dim, embed_dim) in zip(input_model, self.features)
+            Reshape(target_shape=(hidden_dim,))(
+                Embedding(input_dim, hidden_dim, name=f"{f}_embedding")(input)
+            ) if input_dim else Dense(hidden_dim)(input)
+            for input, (f, input_dim, hidden_dim) in zip(input_model, self.features)
         ]
 
         output_model = Concatenate()(output_embeddings)
@@ -229,10 +223,11 @@ class NN_with_EntityEmbedding(Model):
     def _val_for_pred(self, val):
         return numpy.exp(val * self.max_log_y)
 
-    def fit(self, X_train, y_train, X_val, y_val):
+    def fit(self, X_train, y_train, X_val, y_val, epochs=10):
+        self.max_log_y = max(numpy.max(numpy.log(y_train)), numpy.max(numpy.log(y_val)))
         self.model.fit(self.preprocessing(X_train), self._val_for_fit(y_train),
                        validation_data=(self.preprocessing(X_val), self._val_for_fit(y_val)),
-                       epochs=self.epochs, batch_size=128,
+                       epochs=epochs, batch_size=128,
                        # callbacks=[self.checkpointer],
                        )
         # self.model.load_weights('best_model_weights.hdf5')
