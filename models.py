@@ -219,7 +219,7 @@ class NN_with_EntityEmbedding(Model):
         output_day = Reshape(target_shape=(10,))(output_day)
 
         input_germanstate = Input(shape=(1,))
-        output_germanstate = Embedding(12, 6, name='state_embedding')(input_germanstate)
+        output_germanstate = Embedding(9, 6, name='state_embedding')(input_germanstate)
         output_germanstate = Reshape(target_shape=(6,))(output_germanstate)
 
         input_model = [input_store, input_dow, input_promo,
