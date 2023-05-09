@@ -23,7 +23,7 @@ def feature_list(record):
     promo = record['onpromotion']
 
     return [
-        1,
+        #1,
         store_index,
         day_of_week,
         promo,

@@ -43,31 +43,6 @@ def embed_features(X, saved_embeddings_fname):
     return numpy.array(X_embedded)
 
 
-def split_features(X):
-    X_list = []
-
-    store_index = X[..., [1]]
-    X_list.append(store_index)
-
-    day_of_week = X[..., [2]]
-    X_list.append(day_of_week)
-
-    promo = X[..., [3]]
-    X_list.append(promo)
-
-    year = X[..., [4]]
-    X_list.append(year)
-
-    month = X[..., [5]]
-    X_list.append(month)
-
-    day = X[..., [6]]
-    X_list.append(day)
-
-    State = X[..., [7]]
-    X_list.append(State)
-
-    return X_list
 
 
 class Model(object):
@@ -179,60 +154,67 @@ class KNN(Model):
     def guess(self, feature):
         return numpy.exp(self.clf.predict(self.normalizer.transform(feature)))
 
-
 class NN_with_EntityEmbedding(Model):
 
-    def __init__(self, X_train, y_train, X_val, y_val):
+    def __init__(
+        self, 
+        X_train, y_train, 
+        X_val, y_val,
+        epochs=10,
+        features=[
+            ("store", 54, 10),
+            ("dow", 7, 6),
+            ("promo", 1, 1),
+            ("year", 3, 2),
+            ("month", 12, 6),
+            ("day", 31, 10),
+            ("state", 9, 6),
+            #("store_type", 5, 3),
+            #("city", 22, 10),
+            #("family", 33, 10),
+        ],
+        model_dims=[1000, 500],
+        model_init="uniform",
+        model_activation="relu"
+    ):
         super().__init__()
-        self.epochs = 10
+        self.epochs = epochs
+        
+        self.features = features
+        self.feature_count = len(self.features)
+        self.model_dims = model_dims
+        self.model_init = model_init
+        self.model_activation = model_activation
+
         self.checkpointer = ModelCheckpoint(filepath="best_model_weights.hdf5", verbose=1, save_best_only=True)
         self.max_log_y = max(numpy.max(numpy.log(y_train)), numpy.max(numpy.log(y_val)))
         self.__build_keras_model()
         self.fit(X_train, y_train, X_val, y_val)
 
+    def split_features(self, X):
+        X_list = [
+            X[..., i]
+            for i in range(self.feature_count)
+        ]
+        return X_list
+
     def preprocessing(self, X):
-        X_list = split_features(X)
+        X_list = self.split_features(X)
         return X_list
 
     def __build_keras_model(self):
-        input_store = Input(shape=(1,))
-        output_store = Embedding(54, 10, name='store_embedding')(input_store)
-        output_store = Reshape(target_shape=(10,))(output_store)
-
-        input_dow = Input(shape=(1,))
-        output_dow = Embedding(7, 6, name='dow_embedding')(input_dow)
-        output_dow = Reshape(target_shape=(6,))(output_dow)
-
-        input_promo = Input(shape=(1,))
-        output_promo = Dense(1)(input_promo)
-
-        input_year = Input(shape=(1,))
-        output_year = Embedding(3, 2, name='year_embedding')(input_year)
-        output_year = Reshape(target_shape=(2,))(output_year)
-
-        input_month = Input(shape=(1,))
-        output_month = Embedding(12, 6, name='month_embedding')(input_month)
-        output_month = Reshape(target_shape=(6,))(output_month)
-
-        input_day = Input(shape=(1,))
-        output_day = Embedding(31, 10, name='day_embedding')(input_day)
-        output_day = Reshape(target_shape=(10,))(output_day)
-
-        input_germanstate = Input(shape=(1,))
-        output_germanstate = Embedding(9, 6, name='state_embedding')(input_germanstate)
-        output_germanstate = Reshape(target_shape=(6,))(output_germanstate)
-
-        input_model = [input_store, input_dow, input_promo,
-                       input_year, input_month, input_day, input_germanstate]
-
-        output_embeddings = [output_store, output_dow, output_promo,
-                             output_year, output_month, output_day, output_germanstate]
+        input_model = [Input(shape=(1,)) for i in range(self.feature_count)]
+        output_embeddings = [
+            Reshape(target_shape=(embed_dim,))(
+                Embedding(input_dim, embed_dim, name=f)(input)
+            )
+            for input, (f, input_dim, embed_dim) in zip(input_model, self.features)
+        ]
 
         output_model = Concatenate()(output_embeddings)
-        output_model = Dense(1000, kernel_initializer="uniform")(output_model)
-        output_model = Activation('relu')(output_model)
-        output_model = Dense(500, kernel_initializer="uniform")(output_model)
-        output_model = Activation('relu')(output_model)
+        for dim in self.model_dims:
+            output_model = Dense(dim, kernel_initializer=self.model_init)(output_model)
+            output_model = Activation(self.model_activation)(output_model)
         output_model = Dense(1)(output_model)
         output_model = Activation('sigmoid')(output_model)
 
@@ -264,9 +246,21 @@ class NN_with_EntityEmbedding(Model):
 
 class NN(Model):
 
-    def __init__(self, X_train, y_train, X_val, y_val):
+    def __init__(self, 
+        X_train, y_train, 
+        X_val, y_val,
+        epochs=10,
+        model_dims=[1000, 500],
+        model_init="uniform",
+        model_activation="relu"
+    ):
         super().__init__()
-        self.epochs = 10
+        self.epochs = epochs
+
+        self.model_dims = model_dims
+        self.model_init = model_init
+        self.model_activation = model_activation
+
         self.checkpointer = ModelCheckpoint(filepath="best_model_weights.hdf5", verbose=1, save_best_only=True)
         self.max_log_y = max(numpy.max(numpy.log(y_train)), numpy.max(numpy.log(y_val)))
         self.__build_keras_model()
@@ -274,10 +268,9 @@ class NN(Model):
 
     def __build_keras_model(self):
         self.model = Sequential()
-        self.model.add(Dense(1000, kernel_initializer="uniform", input_dim=1183))
-        self.model.add(Activation('relu'))
-        self.model.add(Dense(500, kernel_initializer="uniform"))
-        self.model.add(Activation('relu'))
+        for dim in self.model_dims:
+            output_model = Dense(dim, kernel_initializer=self.model_init)(output_model)
+            output_model = Activation(self.model_activation)(output_model)
         self.model.add(Dense(1))
         self.model.add(Activation('sigmoid'))
 
