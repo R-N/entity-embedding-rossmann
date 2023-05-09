@@ -4,9 +4,6 @@ from sklearn import preprocessing
 import numpy as np
 import random
 random.seed(42)
-
-import pickle
-import csv
 import pandas as pd
 
 def csv2dicts(csvfile):

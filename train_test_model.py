@@ -53,11 +53,33 @@ n = min(n, train_size)
 X_train, y_train = sample(X_train, y_train, n)  # Simulate data sparsity
 print("Number of samples used for training: " + str(y_train.shape[0]))
 
+# Load LabelEncoders
+with open("les.pickle", 'rb') as f:
+    les = pickle.load(f)
+
+features=[
+    ("store", 54, 10),
+    ("dow", 7, 6),
+    ("promo", 0, 1),
+    ("year", 3, 2),
+    ("month", 12, 6),
+    ("day", 31, 10),
+    ("state", 16, 6),
+    ("store_type", 5, 3),
+    ("city", 22, 10),
+    ("family", 33, 10),
+]
+
+features = [
+    (f, len(les[i].classes_), hidden_dim)
+    for i, (f, input_dim, hidden_dim) in enumerate(features)
+]
+
 models = []
 
 print("Fitting NN_with_EntityEmbedding...")
 for i in range(5):
-    model = NN_with_EntityEmbedding()
+    model = NN_with_EntityEmbedding(features=features)
     model.fit(
         X_train, y_train, 
         X_val, y_val,
@@ -81,15 +103,9 @@ for i in range(5):
 
 if save_embeddings:
     model = models[0].model
-    store_embedding = model.get_layer('store_embedding').get_weights()[0]
-    dow_embedding = model.get_layer('dow_embedding').get_weights()[0]
-    year_embedding = model.get_layer('year_embedding').get_weights()[0]
-    month_embedding = model.get_layer('month_embedding').get_weights()[0]
-    day_embedding = model.get_layer('day_embedding').get_weights()[0]
-    german_states_embedding = model.get_layer('state_embedding').get_weights()[0]
+    embeddings = {f: e.get_weights()[0] for f, e in model.embedding_dict.items()}
     with open(saved_embeddings_fname, 'wb') as f:
-        pickle.dump([store_embedding, dow_embedding, year_embedding,
-                     month_embedding, day_embedding, german_states_embedding], f, -1)
+        pickle.dump(embeddings, f, -1)
 
 
 def evaluate_models(models, X, y):
