@@ -5,11 +5,22 @@ import numpy as np
 import random
 random.seed(42)
 
-with open('train_data.pickle', 'rb') as f:
-    train_data = pickle.load(f)
-    num_records = len(train_data)
-with open('store_data.pickle', 'rb') as f:
-    store_data = pickle.load(f)
+import pickle
+import csv
+import pandas as pd
+
+def csv2dicts(csvfile):
+    df = pd.read_csv(csvfile)
+    df = df.fillna('')
+    return df.to_dict('records')
+
+train_data = "train.csv"
+store_data = "store.csv"
+
+train_data = csv2dicts(train_data)
+store_data = csv2dicts(store_data)
+    
+num_records = len(train_data)
 
 def feature_list(record):
     dt = datetime.strptime(record['date'], '%Y-%m-%d')
@@ -31,8 +42,10 @@ def feature_list(record):
         month,
         day,
         store['state'],
+        store['type'],
+        store['city'],
+        family,
     ]
-
 
 train_data_X = []
 train_data_y = []
